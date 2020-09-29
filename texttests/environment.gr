@@ -1,3 +1,3 @@
 # If your .class files are somewhere else, add the path to the list
-CLASSPATH:${TEXTTEST_HOME}/Kotlin:${TEXTTEST_HOME}/Kotlin/build/classes/kotlin/test/com/gildedrose
+CLASSPATH:${TEXTTEST_HOME}/Kotlin/build/classes/kotlin/test/com/gildedrose/:${TEXTTEST_HOME}/Kotlin/build/classes/kotlin/test/com/gildedrose/
 PERL5OPT:-I${TEXTTEST_HOME}/perl
