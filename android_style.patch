@@ -1,0 +1,220 @@
+diff --git a/Kotlin/src/main/kotlin/com/gildedrose/GildedRose.kt b/Kotlin/src/main/kotlin/com/gildedrose/GildedRose.kt
+index f18dbd3..244e696 100644
+--- a/Kotlin/src/main/kotlin/com/gildedrose/GildedRose.kt
++++ b/Kotlin/src/main/kotlin/com/gildedrose/GildedRose.kt
+@@ -1,63 +1,31 @@
+ package com.gildedrose
+ 
+-import com.gildedrose.domain.model.AgedItem
++import com.gildedrose.data.local.ItemsDataSource
++import com.gildedrose.data.repository.ItemRepositoryImpl
+ import com.gildedrose.domain.model.Item
+-import com.gildedrose.domain.model.LegendaryItem
+-import com.gildedrose.domain.model.QualityChanger
+-import com.gildedrose.domain.model.SpoilingItem
+-import com.gildedrose.domain.model.TicketItem
+-import com.gildedrose.utils.mapInPlace
++import com.gildedrose.domain.repository.ItemRepository
++import com.gildedrose.domain.usecase.SetInitialItemsUseCase
++import com.gildedrose.domain.usecase.UpdateItemsUseCase
+ 
+ class GildedRose(var items: Array<Item>) {
+ 
+-    private companion object {
+-        const val AGED_BRIE = "Aged Brie"
+-        const val BACKSTAGE_PASS = "Backstage passes to a TAFKAL80ETC concert"
+-        const val SULFURAS = "Sulfuras, Hand of Ragnaros"
+-        const val CONJURED = "Conjured Item"
++    private val itemRepository: ItemRepository = ItemRepositoryImpl(
++        ItemsDataSource()
++    )
+ 
+-        const val CONJURED_ITEM_DEGRADATION = 2
+-        const val MAX_QUALITY = 50
+-    }
++    private val setInitialItemUseCase = SetInitialItemsUseCase(itemRepository)
+ 
+-    fun updateQuality() {
+-        items.mapInPlace { item ->
+-            val mappedItem = mapItem(item)
+-            updateMappedItem(mappedItem)
+-        }
+-    }
++    private val updateItemsUseCase = UpdateItemsUseCase(itemRepository)
+ 
+-    private fun mapItem(item: Item) = when (item.name) {
+-        AGED_BRIE -> AgedItem(item.name, item.sellIn, item.quality)
+-        BACKSTAGE_PASS -> TicketItem(item.name, item.sellIn, item.quality)
+-        SULFURAS -> LegendaryItem(item.name, item.sellIn, item.quality)
+-        CONJURED -> SpoilingItem(item.name, item.sellIn, item.quality, CONJURED_ITEM_DEGRADATION)
+-        else -> SpoilingItem(item.name, item.sellIn, item.quality)
++    init {
++        setInitialItemUseCase.execute(items)
+     }
+ 
+-    private fun updateMappedItem(mappedItem: Item): Item {
+-        if (mappedItem is QualityChanger) {
+-            mappedItem.updateQuality()
+-        }
+-
+-        if (mappedItem !is LegendaryItem) {
+-            mappedItem.sellIn -= 1
+-            mappedItem.quality = restrictQuality(mappedItem.quality)
+-        }
+-
+-        return mappedItem
++    fun updateQuality() {
++        val newItems = updateItemsUseCase.execute()
++        items = newItems
+     }
+ 
+-    private fun restrictQuality(currentQuality: Int) = when {
+-        currentQuality < 0 -> {
+-            0
+-        }
+-        currentQuality > MAX_QUALITY -> {
+-            MAX_QUALITY
+-        }
+-        else -> {
+-            currentQuality
+-        }
+-    }
++
+ }
+ 
+diff --git a/Kotlin/src/main/kotlin/com/gildedrose/data/local/ItemsDataSource.kt b/Kotlin/src/main/kotlin/com/gildedrose/data/local/ItemsDataSource.kt
+index 53677cf..a901aa4 100644
+--- a/Kotlin/src/main/kotlin/com/gildedrose/data/local/ItemsDataSource.kt
++++ b/Kotlin/src/main/kotlin/com/gildedrose/data/local/ItemsDataSource.kt
+@@ -1,4 +1,7 @@
+ package com.gildedrose.data.local
+ 
+-class ItemDataSource {
++import com.gildedrose.domain.model.Item
++
++class ItemsDataSource {
++    var items: Array<Item> = arrayOf()
+ }
+diff --git a/Kotlin/src/main/kotlin/com/gildedrose/data/repository/ItemRepositoryImpl.kt b/Kotlin/src/main/kotlin/com/gildedrose/data/repository/ItemRepositoryImpl.kt
+index bd7382d..58ebd37 100644
+--- a/Kotlin/src/main/kotlin/com/gildedrose/data/repository/ItemRepositoryImpl.kt
++++ b/Kotlin/src/main/kotlin/com/gildedrose/data/repository/ItemRepositoryImpl.kt
+@@ -1,2 +1,16 @@
+ package com.gildedrose.data.repository
+ 
++import com.gildedrose.data.local.ItemsDataSource
++import com.gildedrose.domain.model.Item
++import com.gildedrose.domain.repository.ItemRepository
++
++class ItemRepositoryImpl(
++        private val itemsDataSource: ItemsDataSource
++) : ItemRepository {
++
++    override fun updateItems(newItems: Array<Item>) {
++        itemsDataSource.items = newItems
++    }
++
++    override fun getItems() = itemsDataSource.items
++}
+diff --git a/Kotlin/src/main/kotlin/com/gildedrose/domain/repository/ItemRepository.kt b/Kotlin/src/main/kotlin/com/gildedrose/domain/repository/ItemRepository.kt
+index e1befb8..0f71b68 100644
+--- a/Kotlin/src/main/kotlin/com/gildedrose/domain/repository/ItemRepository.kt
++++ b/Kotlin/src/main/kotlin/com/gildedrose/domain/repository/ItemRepository.kt
+@@ -1,4 +1,8 @@
+ package com.gildedrose.domain.repository
+ 
++import com.gildedrose.domain.model.Item
++
+ interface ItemRepository {
++    fun updateItems(newItems: Array<Item>)
++    fun getItems(): Array<Item>
+ }
+diff --git a/Kotlin/src/main/kotlin/com/gildedrose/domain/usecase/SetInitialItemsUseCase.kt b/Kotlin/src/main/kotlin/com/gildedrose/domain/usecase/SetInitialItemsUseCase.kt
+index f3cb4d6..fba110d 100644
+--- a/Kotlin/src/main/kotlin/com/gildedrose/domain/usecase/SetInitialItemsUseCase.kt
++++ b/Kotlin/src/main/kotlin/com/gildedrose/domain/usecase/SetInitialItemsUseCase.kt
+@@ -1,2 +1,12 @@
+ package com.gildedrose.domain.usecase
+ 
++import com.gildedrose.domain.model.Item
++import com.gildedrose.domain.repository.ItemRepository
++
++class SetInitialItemsUseCase(
++        private val itemRepository: ItemRepository
++) {
++    fun execute(initialItems: Array<Item>) {
++        itemRepository.updateItems(initialItems)
++    }
++}
+diff --git a/Kotlin/src/main/kotlin/com/gildedrose/domain/usecase/UpdateItemsUseCase.kt b/Kotlin/src/main/kotlin/com/gildedrose/domain/usecase/UpdateItemsUseCase.kt
+index fe85494..fc4f040 100644
+--- a/Kotlin/src/main/kotlin/com/gildedrose/domain/usecase/UpdateItemsUseCase.kt
++++ b/Kotlin/src/main/kotlin/com/gildedrose/domain/usecase/UpdateItemsUseCase.kt
+@@ -1,4 +1,66 @@
+ package com.gildedrose.domain.usecase
+ 
+-class UpdateItemsUseCase {
++import com.gildedrose.domain.model.AgedItem
++import com.gildedrose.domain.model.Item
++import com.gildedrose.domain.model.LegendaryItem
++import com.gildedrose.domain.model.QualityChanger
++import com.gildedrose.domain.model.SpoilingItem
++import com.gildedrose.domain.model.TicketItem
++import com.gildedrose.domain.repository.ItemRepository
++
++class UpdateItemsUseCase(
++        private val itemRepository: ItemRepository
++) {
++    private companion object {
++        const val AGED_BRIE = "Aged Brie"
++        const val BACKSTAGE_PASS = "Backstage passes to a TAFKAL80ETC concert"
++        const val SULFURAS = "Sulfuras, Hand of Ragnaros"
++        const val CONJURED = "Conjured Item"
++
++        const val CONJURED_ITEM_DEGRADATION = 2
++        const val MAX_QUALITY = 50
++    }
++
++    fun execute(): Array<Item> {
++        val items = itemRepository.getItems()
++        val newItems = items.map { item ->
++            val mappedItem = mapItem(item)
++            updateMappedItem(mappedItem)
++        }.toTypedArray()
++        itemRepository.updateItems(newItems)
++        return newItems
++    }
++
++    private fun mapItem(item: Item) = when (item.name) {
++        AGED_BRIE -> AgedItem(item.name, item.sellIn, item.quality)
++        BACKSTAGE_PASS -> TicketItem(item.name, item.sellIn, item.quality)
++        SULFURAS -> LegendaryItem(item.name, item.sellIn, item.quality)
++        CONJURED -> SpoilingItem(item.name, item.sellIn, item.quality, CONJURED_ITEM_DEGRADATION)
++        else -> SpoilingItem(item.name, item.sellIn, item.quality)
++    }
++
++    private fun updateMappedItem(mappedItem: Item): Item {
++        if (mappedItem is QualityChanger) {
++            mappedItem.updateQuality()
++        }
++
++        if (mappedItem !is LegendaryItem) {
++            mappedItem.sellIn -= 1
++            mappedItem.quality = restrictQuality(mappedItem.quality)
++        }
++
++        return mappedItem
++    }
++
++    private fun restrictQuality(currentQuality: Int) = when {
++        currentQuality < 0 -> {
++            0
++        }
++        currentQuality > MAX_QUALITY -> {
++            MAX_QUALITY
++        }
++        else -> {
++            currentQuality
++        }
++    }
+ }
