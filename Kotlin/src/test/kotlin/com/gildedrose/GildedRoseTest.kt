@@ -1,5 +1,6 @@
 package com.gildedrose
 
+import com.gildedrose.domain.model.Item
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Test
@@ -149,8 +150,11 @@ internal class GildedRoseTest {
     @Test
     fun `assert that conjured items degrade in quality twice as fast as normal`() {
         // Given
-        val conjuredItem = arrayOf(Item("Conjured Item", 10, 10))
-        val app = GildedRose(conjuredItem)
+        val conjuredItems = arrayOf(
+            Item("Conjured Item", 10, 10),
+            Item("Conjured Item", 0, 10)
+        )
+        val app = GildedRose(conjuredItems)
 
         // When
         app.updateQuality()
@@ -158,6 +162,7 @@ internal class GildedRoseTest {
         // Then
         assertEquals(9, app.items[0].sellIn)
         assertEquals(8, app.items[0].quality)
+        assertEquals(6, app.items[1].quality)
     }
 
 
