@@ -16,6 +16,7 @@ c3f51c4f126 - This commit contains the largest chunk of refactoring. My process 
 
 16bbe2403ec - This is the totally cleaned up version, and the final commit that involves the exercise directly.
 
-## Final commit
+9b967025cc8 - This commit contains some general cleanup, the editing of this readme.md but also a git patch. It’s located in the root folder and it’s called _android\_style.patch_. This is a super quick attempt at applying some CLEAN principles to the GildedRose project. I didn’t spend a lot of time on this however since I felt that wasn’t the point of the exercise. This is also the reason I included it as a patch.
 
-The final commit contains some general cleanup, the editing of this readme.md but also a git patch. It’s located in the root folder and it’s called _android\_style.patch_. This is a super quick attempt at applying some CLEAN principles to the GildedRose project. I didn’t spend a lot of time on this however since I felt that wasn’t the point of the exercise. This is also the reason I included it as a patch.
+The final commit again involves some general cleanup and small things I changed before sending the assignment out.
+

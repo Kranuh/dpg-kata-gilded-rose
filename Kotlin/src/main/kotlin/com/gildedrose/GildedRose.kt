@@ -7,6 +7,8 @@ import com.gildedrose.domain.model.QualityChanger
 import com.gildedrose.domain.model.SpoilingItem
 import com.gildedrose.domain.model.TicketItem
 import com.gildedrose.utils.mapInPlace
+import kotlin.math.max
+import kotlin.math.min
 
 class GildedRose(var items: Array<Item>) {
 
@@ -48,16 +50,6 @@ class GildedRose(var items: Array<Item>) {
         return mappedItem
     }
 
-    private fun restrictQuality(currentQuality: Int) = when {
-        currentQuality < 0 -> {
-            0
-        }
-        currentQuality > MAX_QUALITY -> {
-            MAX_QUALITY
-        }
-        else -> {
-            currentQuality
-        }
-    }
+    private fun restrictQuality(currentQuality: Int) = max(0, min(MAX_QUALITY, currentQuality))
 }
 
